@@ -18,9 +18,13 @@
     </address>
     <input type='button' id='detail_publish' value='Publish'></input>
     <div id="map_canvas" style="width:1000; height:500"></div>
-    <canvas id="transport_canvas" style="position: relative; width: 1000; height: 500; top: -500px;">
+    <!--canvas id="transport_canvas" style="position: relative; width: 1000; height: 500; top: -500px;">
+      <p>Nem megy a canvas</p>
+    </canvas-->
+    <canvas id="transport_canvas">
       <p>Nem megy a canvas</p>
     </canvas>
+
     <!--canvas id="transport_canvas" style="position: relative; width: 1000px; height:500px">
       <p>Nem megy a canvas</p>     
     </canvas-->
@@ -82,8 +86,8 @@
 	  if (listOfPointsToVisitWithTimes.previousStation === undefined) {
 	    listOfPointsToVisitWithTimes.previousStation = 0;
 	  }
-	   previousStation = listOfPointsToVisitWithTimes.previousStation;
-	  
+	  previousStation = listOfPointsToVisitWithTimes.previousStation;
+
 	  bounds = map.getBounds();
 	  southWest = bounds.getSouthWest();
 	  northEast = bounds.getNorthEast();
@@ -96,12 +100,14 @@
 	  currentStepToStation += 1;
 	  //We have reached the next stop
 	  if ((timeToReachNextStop * 1000) == currentTime) {
+	    previousStation = currentStation;
 	    listOfPointsToVisitWithTimes.previousStation = currentStation;
-	    listOfPointsToVisitWithTimes.currentStation = currentStation + 1;
+	    currentStation = currentStation + 1;
+	    listOfPointsToVisitWithTimes.currentStation = currentStation;
 	    currentTime = 0;
 	    currentStepToStation = 0;
 	    if (currentStation > listOfPointsToVisitWithTimes.length - 1) {
-	      currentStation = 0;
+	      listOfPointsToVisitWithTimes.currentStation = 0;
 	    }
 	  }
 	  previousStationX = listOfPointsToVisitWithTimes[previousStation][0].position.b;
@@ -111,40 +117,62 @@
 
 	  x = (previousStationX + (((nextStationX - previousStationX) / timeframesToReachNextStop) * currentStepToStation));
 	  y = (previousStationY + (((nextStationY - previousStationY) / timeframesToReachNextStop) * currentStepToStation));
-	  ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear canvas    
+
+	 // ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear canvas    
 	  if ((x > southWest.lng()) && (x < northEast.lng()) && (y > southWest.lat()) && (y < northEast.lat())) {
 	    //longitude = x in descartes
 	    //latitude = y
-	    xToDraw = ((Math.abs(x - southWest.lng())) / lngSpan) * canvasWidth;
-	    yToDraw = canvasHeight - (((Math.abs(y - southWest.lat())) / latSpan) * canvasHeight);
-	    ctx.drawImage(dotImage, (xToDraw / canvasWidth) * 100, (yToDraw / canvasHeight) * 100, 3, 3);
-	    ctx.drawImage(dotImage, xToDraw, yToDraw, 2, 2);
-	    ctx.drawImage(dotImage, yToDraw, xToDraw, 2, 2);
-	    ctx.drawImage(dotImage, 10, 10, 2, 2);
-	  }
+	    //xToDraw = ((Math.abs(x - southWest.lng())) / lngSpan) * canvasWidth;
+	    //yToDraw = canvasHeight - (((Math.abs(y - southWest.lat())) / latSpan) * canvasHeight);
+	    ll = new google.maps.LatLng(y, x);
+	    xToDraw = map.getProjection().fromLatLngToPoint(ll).x;
+	    yToDraw = map.getProjection().fromLatLngToPoint(ll).y;
+	    if (!(listOfPointsToVisitWithTimes.marker === undefined)) {
+	      listOfPointsToVisitWithTimes.marker.setMap(null);
+	    }
+	    listOfPointsToVisitWithTimes.marker = new google.maps.Marker({
+	      position: new google.maps.LatLng(y, x),
+	      map: map
+	    });
+	    // ctx.drawImage(dotImage, (xToDraw / canvasWidth) * 100, (yToDraw / canvasHeight) * 100, 3, 3);
+	   // ctx.drawImage(dotImage, xToDraw, yToDraw, 2, 2);
+	    //ctx.drawImage(dotImage, yToDraw, xToDraw, 2, 2);
+	    //ctx.drawImage(dotImage, 10, 10, 2, 2);
+	  } else if (!(listOfPointsToVisitWithTimes.marker === undefined)) {
+	      listOfPointsToVisitWithTimes.marker.setMap(null);
+	    }
 
 	} catch(e) {
-	  alert(e);
+	  //alert(e);
 	}
       };
     };
     initCanvas();
 
     function initData() {
+      mockListOfPointsToVisitWithTimes = new Array();
+      {% for coordinate_list in bus_coordinates %}
+	mockListOfPointsToVisitWithTimes.push([new google.maps.Marker({
+	position: new google.maps.LatLng(
+					 {{ coordinate.0 }}, {{ coordinate.1 }})
+      }), 2])
+      {% endfor %}
+      
       startTimeMock = 1200;
 
       var startTimeLifOfpointsMapping = {};
-      mockListOfPointsToVisitWithTimes = [[new google.maps.Marker({
+      
+      /*mockListOfPointsToVisitWithTimes = [[new google.maps.Marker({
 	position: new google.maps.LatLng(19, 37)
-      }), 5], [new google.maps.Marker({
+      }), 2], [new google.maps.Marker({
 	position: new google.maps.LatLng(22, 48)
-      }), 5], [new google.maps.Marker({
+      }), 2], [new google.maps.Marker({
 	position: new google.maps.LatLng(20, 50)
-      }), 5], [new google.maps.Marker({
+      }), 2], [new google.maps.Marker({
 	position: new google.maps.LatLng(14.5, 46)
-      }), 5]];
+      }), 2]];*/
       startingTimesFromMidnightBusMapping[startTimeMock] = new Array();
-      startingTimesFromMidnightBusMapping[startTimeMock][0]=mockListOfPointsToVisitWithTimes;
+      startingTimesFromMidnightBusMapping[startTimeMock][0] = mockListOfPointsToVisitWithTimes;
     };</script>
   </body>
 </html>

@@ -33,15 +33,17 @@ class DetailedHandler(webapp.RequestHandler):
         path = self.request.path
         splittedpath = path.rsplit('/')
         stops = get_stops()
-        stops_json = []
+        stops_json = {}
+        stops_list = []
         i = 0
         for stop in stops:
-            stops_json.append((stop.latitude, stop.longitude))
+            stops_list.append((stop.latitude, stop.longitude))
             i = i + 1
+        stops_json.append('asdf', stop_list)
 #        timeheaders = ['10', '20', '30', '40', '50']
         self.response.out.write(template.render('detailed.html', {'path':path, 'stops':['sdf', '11'],
                                                                   't_name':splittedpath[3],
-                                                                  'coordinates':simplejson.dumps(stops_json)
+                                                                  'bus_coordinates':stops_json
                                                                   }))
         
         
@@ -104,7 +106,9 @@ def save_transport_header(name, city, stops_data):
     stops_list: list of stops (list of tuples (stop name, arrival time from the first stop)
     timetable: a list of minutes from midnight    
     """
-    query_t = Transport.gql('WHERE name= :1', name).fetch(0)
+    query_t = Transport.gql('WHERE name= :1', name)
+    for a in query_t:
+        logging.info('SD');
 #    logging.info(dir(query_t))
     if (query_t):
         transport_to_save = query_t
@@ -117,15 +121,17 @@ def save_transport_header(name, city, stops_data):
         #        stopsDb = Stops(stop=stop, transport_header=transport_to_save)
         #        stopsDb.put()
         coordinates = StationCoordinate(latitude=coordinate[0],
-                                         longitude=coordinate[1]
+                                         longitude=coordinate[1],
+                                         transport=transport_to_save
                                          )
         coordinates.put()
 
 def get_stops():
     "Returns the stops on the map"
 #    stops = db.GqlQuery('SELECT * FROM Stops')
-#    logging.info('Hossza ' + len(stops))
-    return db.GqlQuery('SELECT * FROM StationCoordinate')
+    stops = db.GqlQuery('SELECT * FROM StationCoordinate')
+    #    for stops in query:        
+    return stops
 #    return stops
 
 def main():
