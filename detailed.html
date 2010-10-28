@@ -24,17 +24,17 @@
     <!--canvas id="transport_canvas" style="position: relative; width: 1000px; height:500px">
       <p>Nem megy a canvas</p>     
     </canvas-->
-    <!--script src="static/json2.js">
-    </script-->
+    <script src="static/javascript/json2.js">
+    </script>
     <script type="text/javascript"
 	    src="http://maps.google.com/maps/api/js?sensor=false">
     </script>
     <!--script type="text/javascript"
-	    src="/static/maps.js">
+	    src="/static/javascript/maps.js">
     </script-->
     <script src="http://code.jquery.com/jquery-1.4.3.js">
     </script>
-    <script src="/static/detail.js">
+    <script src="/static/javascript/detail.js">
     </script>
     <script>
     var ctx;
@@ -47,7 +47,7 @@
       var canvasWidth = canvas.offsetWidth;
       var canvasHeight = canvas.offsetHeight;
       var dotImage = new Image();
-      dotImage.src = '/static/dot.png';
+      dotImage.src = '/static/images/dot.png';
       dotImage.onload = function() {
 	ctx = canvas.getContext('2d');
 	setInterval(draw, timeFrame);
