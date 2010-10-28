@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Transit informations</title>
+  </head>
+  <body onload="initialize()">
+    <h1>Transit informations</h1>
+    <input id='new_t_name'></input>
+    <input id='new_t_button' type='button' value='Create'></input>
+    <ul id="transports">
+      {% if transports %}
+         {% for transport in transports %}
+           <li><a href='/detail/budapest/{{ transport.name }}'>{{ transport.name }}</a></li>
+	 {% endfor %}
+      {% endif %}
+    </ul>
+    <address>
+      <a href="mailto:rasztasd@rasztasd-laptop">rasztasd</a>
+    </address>
+    <div id="map_canvas" style="width:100%; height:80%"></div>
+    <canvas id="transport_canvas" width="150" height="150"></canvas>  
+    <script type="text/javascript"
+	    src="http://maps.google.com/maps/api/js?sensor=false">
+    </script>
+    <script type="text/javascript"
+	    src="/static/maps.js">
+    </script>
+    <script type="text/javascript"
+	    src="/static/main.js">
+    </script>
+    <script src="static/jquery-1.4.3.js">
+    </script>
+    
+  </body>
+</html>
