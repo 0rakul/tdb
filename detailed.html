@@ -24,8 +24,8 @@
     <!--canvas id="transport_canvas" style="position: relative; width: 1000px; height:500px">
       <p>Nem megy a canvas</p>     
     </canvas-->
-    <script src="static/javascript/json2.js">
-    </script>
+    <!--script src="static/javascript/json2.js">
+    </script-->
     <script type="text/javascript"
 	    src="http://maps.google.com/maps/api/js?sensor=false">
     </script>
@@ -37,94 +37,114 @@
     <script src="/static/javascript/detail.js">
     </script>
     <script>
-    var ctx;
-    //list of [x, y, Times in seconds] for stations
-    var listOfPointsToVisitWithTimes = [[19, 37, 5], [22,48, 5], [20, 50, 5], [14.5, 46, 5]];
     function initCanvas() {
-      //Millis
+      listOfPointsToVisitWithTimes = [];
+      startTimeMock = 0;
+      startingTimesFromMidnightBusMapping = new Array();
       canvas = document.getElementById('transport_canvas');
-      var timeFrame = 10;
-      var canvasWidth = canvas.offsetWidth;
-      var canvasHeight = canvas.offsetHeight;
-      var dotImage = new Image();
+      ctx = canvas.getContext('2d');
+      currentTime = 0;
+      currentStepToStation = 0;
+      timeFrame = 10;
+      canvasWidth = canvas.offsetWidth;
+      canvasHeight = canvas.offsetHeight;
+      initData();
+      dotImage = new Image();
       dotImage.src = '/static/images/dot.png';
       dotImage.onload = function() {
-	ctx = canvas.getContext('2d');
-	setInterval(draw, timeFrame);
-	var currentTime = 0;
-	//station where we are hading to
-	var currentStation = 1;
-	//station where we are coming from
-	var previousStation = 0;
-	currentStepToStation = 0;
-	function draw() {
-	  try {
-	    if (!map) {
-	      return;
-	    }
-	    if (map.getBounds() == undefined) {
-	      return;
-	    }
-	    bounds = map.getBounds();
-	    southWest = bounds.getSouthWest();
-	    northEast = bounds.getNorthEast();
-	    lngSpan = northEast.lng() - southWest.lng();
-	    latSpan = northEast.lat() - southWest.lat();
-	    timeToReachNextStop = listOfPointsToVisitWithTimes[currentStation][2];
-	    //in timeframes
-	    timeframesToReachNextStop = (timeToReachNextStop * 1000) / timeFrame;
-	    currentTime += timeFrame;
-	    currentStepToStation += 1;
-	    //We have reached the next stop
-	    if ((timeToReachNextStop * 1000) == currentTime) {
-	      previousStation = currentStation;
-	      currentStation = currentStation + 1;
-	      currentTime = 0;
-	      currentStepToStation = 0;
-	      if (currentStation > listOfPointsToVisitWithTimes.length - 1) {
-		currentStation = 0;
-	      }
-	    }
-	    previousStationX = listOfPointsToVisitWithTimes[previousStation][0];
-	    previousStationY = listOfPointsToVisitWithTimes[previousStation][1];
-	    nextStationX = listOfPointsToVisitWithTimes[currentStation][0];
-	    nextStationY = listOfPointsToVisitWithTimes[currentStation][1];
-
-	    x = (previousStationX + (((nextStationX - previousStationX) / timeframesToReachNextStop) * currentStepToStation));
-	    y = (previousStationY + (((nextStationY - previousStationY) / timeframesToReachNextStop) * currentStepToStation));
-	    ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear canvas    
-	    if ((x > southWest.lng()) && (x < northEast.lng()) && (y > southWest.lat()) && (y < northEast.lat())) {
-	      //longitude = x in descartes
-	      //latitude = y
-	      xToDraw = ((Math.abs(x - southWest.lng())) / lngSpan) * canvasWidth;
-	      yToDraw = canvasHeight - (((Math.abs(y - southWest.lat())) / latSpan) * canvasHeight);
-/*
-	      ctx.strokeStyle = "#000000";
-	      ctx.fillStyle = "#FFFF00";
-	      ctx.beginPath();
-*/
-	      //ctx.drawImage(dotImage, (xToDraw/canvasWidth)*100, (yToDraw/canvasHeight)*100, 3, 3);
-	      ctx.drawImage(dotImage, (xToDraw/canvasWidth)*100, (yToDraw/canvasHeight)*100, 3, 3);
-	      ctx.drawImage(dotImage, xToDraw, yToDraw, 2, 2);
-	      ctx.drawImage(dotImage, 10, 10, 2, 2);
-	      /*
-	      for (i = 0; i< 3; i++) {
-		ctx.fillRect(i, i, 20, 20);
-	      }
-	      
-	      //ctx.fillRect(10,10, 20, 20);
-	      ctx.closePath();
-	      ctx.stroke();
-	      ctx.fill();
-	      */
-	    }
-
-	  } catch(e) {
-	    alert(e);
-	  }
+	setInterval(refresh, timeFrame);
+      };
+      function refresh() {
+	if (!map) {
+	  return;
 	}
-      }
-    }
-    initCanvas();</script>
+	if (map.getBounds() == undefined) {
+	  return;
+	}
+	//list of [x, y, Times in seconds] for stations
+	//var listOfPointsToVisitWithTimes = [[19, 37, 5], [22, 48, 5], [20, 50, 5], [14.5, 46, 5]];
+	var currentTimeInSecondsFromMidnight = 1200;
+
+	nextTransportstartsStopsList = startingTimesFromMidnightBusMapping[currentTimeInSecondsFromMidnight];
+	for (busNames in nextTransportstartsStopsList) {
+	  draw(nextTransportstartsStopsList[busNames]);
+	}
+
+      };
+      function draw(listOfPointsToVisitWithTimes) {
+	try {
+	  //station where we are hading to
+	  if (listOfPointsToVisitWithTimes.currentStation === undefined) {
+	    listOfPointsToVisitWithTimes.currentStation = 1;
+	  }
+	  currentStation = listOfPointsToVisitWithTimes.currentStation;
+	  //station where we are coming from
+	  if (listOfPointsToVisitWithTimes.previousStation === undefined) {
+	    listOfPointsToVisitWithTimes.previousStation = 0;
+	  }
+	   previousStation = listOfPointsToVisitWithTimes.previousStation;
+	  
+	  bounds = map.getBounds();
+	  southWest = bounds.getSouthWest();
+	  northEast = bounds.getNorthEast();
+	  lngSpan = northEast.lng() - southWest.lng();
+	  latSpan = northEast.lat() - southWest.lat();
+	  timeToReachNextStop = listOfPointsToVisitWithTimes[currentStation][1];
+	  //in timeframes
+	  timeframesToReachNextStop = (timeToReachNextStop * 1000) / timeFrame;
+	  currentTime += timeFrame;
+	  currentStepToStation += 1;
+	  //We have reached the next stop
+	  if ((timeToReachNextStop * 1000) == currentTime) {
+	    listOfPointsToVisitWithTimes.previousStation = currentStation;
+	    listOfPointsToVisitWithTimes.currentStation = currentStation + 1;
+	    currentTime = 0;
+	    currentStepToStation = 0;
+	    if (currentStation > listOfPointsToVisitWithTimes.length - 1) {
+	      currentStation = 0;
+	    }
+	  }
+	  previousStationX = listOfPointsToVisitWithTimes[previousStation][0].position.b;
+	  previousStationY = listOfPointsToVisitWithTimes[previousStation][0].position.c;
+	  nextStationX = listOfPointsToVisitWithTimes[currentStation][0].position.b;
+	  nextStationY = listOfPointsToVisitWithTimes[currentStation][0].position.c;
+
+	  x = (previousStationX + (((nextStationX - previousStationX) / timeframesToReachNextStop) * currentStepToStation));
+	  y = (previousStationY + (((nextStationY - previousStationY) / timeframesToReachNextStop) * currentStepToStation));
+	  ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear canvas    
+	  if ((x > southWest.lng()) && (x < northEast.lng()) && (y > southWest.lat()) && (y < northEast.lat())) {
+	    //longitude = x in descartes
+	    //latitude = y
+	    xToDraw = ((Math.abs(x - southWest.lng())) / lngSpan) * canvasWidth;
+	    yToDraw = canvasHeight - (((Math.abs(y - southWest.lat())) / latSpan) * canvasHeight);
+	    ctx.drawImage(dotImage, (xToDraw / canvasWidth) * 100, (yToDraw / canvasHeight) * 100, 3, 3);
+	    ctx.drawImage(dotImage, xToDraw, yToDraw, 2, 2);
+	    ctx.drawImage(dotImage, yToDraw, xToDraw, 2, 2);
+	    ctx.drawImage(dotImage, 10, 10, 2, 2);
+	  }
+
+	} catch(e) {
+	  alert(e);
+	}
+      };
+    };
+    initCanvas();
+
+    function initData() {
+      startTimeMock = 1200;
+
+      var startTimeLifOfpointsMapping = {};
+      mockListOfPointsToVisitWithTimes = [[new google.maps.Marker({
+	position: new google.maps.LatLng(19, 37)
+      }), 5], [new google.maps.Marker({
+	position: new google.maps.LatLng(22, 48)
+      }), 5], [new google.maps.Marker({
+	position: new google.maps.LatLng(20, 50)
+      }), 5], [new google.maps.Marker({
+	position: new google.maps.LatLng(14.5, 46)
+      }), 5]];
+      startingTimesFromMidnightBusMapping[startTimeMock] = new Array();
+      startingTimesFromMidnightBusMapping[startTimeMock][0]=mockListOfPointsToVisitWithTimes;
+    };</script>
   </body>
 </html>

@@ -88,7 +88,7 @@ function initMap() {
 	    title: "Hello"
 	});
     */
-    marker.station_index;
+    //marker.station_index;
     
     
 }
